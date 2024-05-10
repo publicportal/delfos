@@ -190,6 +190,36 @@ resource "oci_core_volume" "pitia-storage" {
 	vpus_per_gb = "10"
 }
 
+data "template_file" "cloud-config" {
+    template = <<YAML
+#cloud-config
+runcmd:
+ - sudo snap install microk8s --classic
+
+ - sudo usermod -a -G microk8s ubuntu
+ - mkdir -p ~/.kube
+ - chmod 0700 ~/.kube
+
+ - sudo sed -i '$a auth       [success=ignore default=1] pam_succeed_if.so user = ubuntu' /etc/pam.d/su
+ - sudo sed -i '$a auth       sufficient   pam_succeed_if.so use_uid user ingroup ubuntu' /etc/pam.d/su
+
+ - su - $USER
+
+ - microk8s stop
+
+ - sudo iptables --flush
+ - sudo iptables -tnat --flush
+ - sudo iptables -P FORWARD ACCEPT
+
+ - microk8s start
+ - microk8s status --wait-ready
+
+
+ - microk8s enable dashboard
+ - alias kubectl='microk8s kubectl'
+YAML
+}
+
 resource "oci_core_instance" "pitia" {
 	agent_config {
 		is_management_disabled = "false"
@@ -254,6 +284,7 @@ resource "oci_core_instance" "pitia" {
 	is_pv_encryption_in_transit_enabled = "true"
 	metadata = {
 		"ssh_authorized_keys" = var.ssh_authorized_keys
+        user_data = "${base64encode(data.template_file.cloud-config.rendered)}"
 	}
 	shape = "VM.Standard.A1.Flex"
 	shape_config {
