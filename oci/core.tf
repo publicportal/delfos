@@ -255,11 +255,7 @@ resource "oci_core_instance" "pitia" {
 	metadata = {
 		"ssh_authorized_keys" = var.ssh_authorized_keys
 	}
-	shape = "VM.Standard.A1.Flex"
-	shape_config {
-		memory_in_gbs = "12"
-		ocpus = "2"
-	}
+	shape = "VM.Standard.E2.1.Micro"
 	source_details {
 		source_id = var.source_id
 		source_type = "image"
