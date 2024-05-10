@@ -257,8 +257,8 @@ resource "oci_core_instance" "pitia" {
 	}
 	shape = "VM.Standard.A1.Flex"
 	shape_config {
-		memory_in_gbs = "12"
-		ocpus = "2"
+		memory_in_gbs = "6"
+		ocpus = "1"
 	}
 	source_details {
 		source_id = var.source_id
