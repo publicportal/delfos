@@ -194,29 +194,35 @@ data "template_file" "cloud-config" {
     template = <<YAML
 #cloud-config
 runcmd:
+# install microk8s
  - sudo snap install microk8s --classic
 
+# add ubuntu user to microk8s group
  - sudo usermod -a -G microk8s ubuntu
+
+# Create kubernetes configuration directory in ubuntu user
  - mkdir -p ~/.kube
  - chmod 0700 ~/.kube
 
+# Configure user ubuntu to be able to su to itself
  - sudo sed -i '$a auth       [success=ignore default=1] pam_succeed_if.so user = ubuntu' /etc/pam.d/su
  - sudo sed -i '$a auth       sufficient   pam_succeed_if.so use_uid user ingroup ubuntu' /etc/pam.d/su
 
- - su - $USER
+# Invoke su to ubuntu (self) to refresh the group assignation
+ - su - ubuntu
 
+# Stop micrik8s and cleanup ip tables so ips are resolved correctly
  - microk8s stop
 
  - sudo iptables --flush
  - sudo iptables -tnat --flush
  - sudo iptables -P FORWARD ACCEPT
 
+# Restart microk8s and enable ingress
  - microk8s start
  - microk8s status --wait-ready
 
-
- - microk8s enable dashboard
- - alias kubectl='microk8s kubectl'
+ - microk8s enable ingress
 YAML
 }
 
